@@ -1,33 +1,23 @@
+import { IRON_OPTIONS } from '@/constants';
+import { withIronSessionSsr } from 'iron-session/next';
 import { NextPage } from 'next';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { User } from './api/user';
 
-const Profile: NextPage = () => {
-	const [loading, setLoading] = useState(true);
-	const [user, setUser] = useState<User | null>(null);
+interface ProfileProps {
+	user: User | null
+}
 
-	useEffect(() => {
-		fetch('./api/user')
-			.then((res) => res.json())
-			.then((data) => {
-				if (data.user) {
-					setUser(data.user);
-				}
-			})
-			.finally(() => setLoading(false));
-	}, []);
+const Profile: NextPage<ProfileProps> = ({ user }) => {
+	const router = useRouter();
 
 	function logout() {
 		fetch('./api/logout')
 			.then((res) => res.json())
 			.then(() => {
-				setUser(null);
+				router.push('/auth')
 			});
-	}
-
-	if (loading) {
-		return <>Loading...</>;
 	}
 
 	if (!user) {
@@ -55,4 +45,17 @@ const Profile: NextPage = () => {
 	);
 };
 
+
+
 export default Profile;
+
+export const getServerSideProps = withIronSessionSsr(
+	async function getServerSideProps({ req }) {
+    return {
+      props: {
+        user: req.session.user || null,
+      },
+    };
+	},
+	IRON_OPTIONS
+)
